@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Build and Run [Debug]",
+            "type": "cppvsdbg",
+            "preLaunchTask": "build",
+            "request": "launch",
+            "program": "./zig-out/bin/dgc.exe",
+            "cwd": "${workspaceRoot}",
+            "console": "integratedTerminal"
+        }
+    ]
+}
