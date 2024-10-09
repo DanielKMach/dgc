@@ -1,6 +1,6 @@
 const std = @import("std");
 const Self = @This();
-const FragFunc = *const fn (self: *const anyopaque, x: u32, y: u32) ?u8;
+const FragFunc = *const fn (self: *const anyopaque, x: usize, y: usize) ?u8;
 const DeinitFunc = *const fn (self: *const anyopaque, allo: std.mem.Allocator) void;
 
 allocator: ?std.mem.Allocator,
@@ -30,7 +30,7 @@ pub fn new(base: anytype, allocator: std.mem.Allocator) !Self {
     }
 
     const gen = struct {
-        pub fn frag(pointer: *const anyopaque, x: u32, y: u32) ?u8 {
+        pub fn frag(pointer: *const anyopaque, x: usize, y: usize) ?u8 {
             const self: *const DataType = @ptrCast(@alignCast(pointer));
             return DataType.frag(self.*, x, y);
         }
@@ -59,6 +59,6 @@ pub fn deinit(self: *Self) void {
     self.* = undefined;
 }
 
-pub fn frag(self: *Self, x: u32, y: u32) ?u8 {
+pub fn frag(self: *Self, x: usize, y: usize) ?u8 {
     return self.fragFunc(self.data, x, y);
 }
