@@ -54,12 +54,13 @@ pub fn render(self: *Self) !void {
 
     for (0..self.height) |y| {
         for (0..self.width) |x| {
-            var c: ?u8 = null;
+            var buf: [3]u8 = .{0} ** 3;
             for (self.elements.items) |*element| {
-                const f = element.frag(x, y);
-                if (f) |_| c = f;
+                element.frag(x, y, &buf);
             }
-            writer.print("{c}", .{c orelse '.'}) catch unreachable;
+            if (buf[1] != 0) writer.print("\x1bESC[38;5;{d}m", .{buf[1]}) catch unreachable;
+            if (buf[2] != 0) writer.print("\x1bESC[48;5;{d}m", .{buf[2]}) catch unreachable;
+            if (buf[0] != 0) writer.print("{c}", .{buf[0]}) catch unreachable;
         }
         writer.print("\r\n", .{}) catch unreachable;
     }

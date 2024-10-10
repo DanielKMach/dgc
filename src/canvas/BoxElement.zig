@@ -11,74 +11,102 @@ pub fn init(x: isize, y: isize, width: usize, height: usize) Self {
     return Self{ .x = x, .y = y, .width = width, .height = height };
 }
 
-pub fn frag(self: Self, x: usize, y: usize) ?u8 {
+pub fn frag(self: Self, x: usize, y: usize, buf: []u8) void {
     if (x >= self.x and x < self.x + @as(isize, @intCast(self.width)) and y >= self.y and y < self.y + @as(isize, @intCast(self.height))) {
-        return '#';
+        buf[0] = '#';
     }
-    return null;
 }
 
 test "boundary" {
     const box = Self.init(0, 0, 16, 16);
+    var buf: [3]u8 = std.mem.zeroes([3]u8);
 
-    var c = box.frag(15, 15);
-    try std.testing.expect(c != null);
+    box.frag(15, 15, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 
-    c = box.frag(0, 0);
-    try std.testing.expect(c != null);
+    box.frag(0, 0, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 
-    c = box.frag(16, 16);
-    try std.testing.expect(c == null);
+    box.frag(16, 16, &buf);
+    try std.testing.expect(buf[0] == 0);
+    buf = std.mem.zeroes([3]u8);
 }
 
 test "element" {
     const box = Self.init(0, 0, 16, 16);
     var element = try Element.new(&box, std.testing.allocator);
     defer element.deinit();
+    var buf: [3]u8 = std.mem.zeroes([3]u8);
 
-    var c = element.frag(15, 15);
-    try std.testing.expect(c != null);
+    element.frag(15, 15, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 
-    c = element.frag(0, 0);
-    try std.testing.expect(c != null);
+    element.frag(0, 0, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 
-    c = element.frag(16, 16);
-    try std.testing.expect(c == null);
+    element.frag(16, 16, &buf);
+    try std.testing.expect(buf[0] == 0);
+    buf = std.mem.zeroes([3]u8);
 }
 
 test "allocated element" {
     const box = Self.init(0, 0, 16, 16);
     var element = try Element.new(box, std.testing.allocator);
     defer element.deinit();
+    var buf: [3]u8 = std.mem.zeroes([3]u8);
 
-    var c = element.frag(15, 15);
-    try std.testing.expect(c != null);
+    element.frag(15, 15, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 
-    c = element.frag(0, 0);
-    try std.testing.expect(c != null);
+    element.frag(0, 0, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 
-    c = element.frag(16, 16);
-    try std.testing.expect(c == null);
+    element.frag(16, 16, &buf);
+    try std.testing.expect(buf[0] == 0);
+    buf = std.mem.zeroes([3]u8);
 }
 
 test "moving" {
     var box = Self.init(0, 0, 16, 16);
+    var buf: [3]u8 = std.mem.zeroes([3]u8);
 
-    try std.testing.expect(box.frag(0, 0) != null);
+    box.frag(0, 0, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 
     box.x += 1;
-    try std.testing.expect(box.frag(0, 0) == null);
-    try std.testing.expect(box.frag(1, 0) != null);
+
+    box.frag(0, 0, &buf);
+    try std.testing.expect(buf[0] == 0);
+    buf = std.mem.zeroes([3]u8);
+
+    box.frag(1, 0, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 }
 
 test "moving element" {
     var box = Self.init(0, 0, 16, 16);
     var element = try Element.new(&box, std.testing.allocator);
     defer element.deinit();
+    var buf: [3]u8 = std.mem.zeroes([3]u8);
 
-    try std.testing.expect(element.frag(0, 0) != null);
+    element.frag(0, 0, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 
     box.x += 1;
-    try std.testing.expect(element.frag(0, 0) == null);
-    try std.testing.expect(element.frag(1, 0) != null);
+    element.frag(0, 0, &buf);
+    try std.testing.expect(buf[0] == 0);
+    buf = std.mem.zeroes([3]u8);
+
+    element.frag(1, 0, &buf);
+    try std.testing.expect(buf[0] != 0);
+    buf = std.mem.zeroes([3]u8);
 }

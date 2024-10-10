@@ -1,7 +1,7 @@
 const std = @import("std");
 const Self = @This();
-const FragFunc = *const fn (self: *const anyopaque, x: usize, y: usize) ?u8;
-const DeinitFunc = *const fn (self: *const anyopaque, allo: std.mem.Allocator) void;
+const FragFunc = *const fn (*const anyopaque, usize, usize, []u8) void;
+const DeinitFunc = *const fn (*const anyopaque, std.mem.Allocator) void;
 
 allocator: ?std.mem.Allocator,
 data: *const anyopaque,
@@ -30,9 +30,9 @@ pub fn new(base: anytype, allocator: std.mem.Allocator) !Self {
     }
 
     const gen = struct {
-        pub fn frag(pointer: *const anyopaque, x: usize, y: usize) ?u8 {
+        pub fn frag(pointer: *const anyopaque, x: usize, y: usize, buf: []u8) void {
             const self: *const DataType = @ptrCast(@alignCast(pointer));
-            return DataType.frag(self.*, x, y);
+            return DataType.frag(self.*, x, y, buf);
         }
         pub fn deinit(pointer: *const anyopaque, allo: std.mem.Allocator) void {
             const ptr: *const DataType = @ptrCast(@alignCast(pointer));
@@ -59,6 +59,6 @@ pub fn deinit(self: *Self) void {
     self.* = undefined;
 }
 
-pub fn frag(self: *Self, x: usize, y: usize) ?u8 {
-    return self.fragFunc(self.data, x, y);
+pub fn frag(self: *Self, x: usize, y: usize, buf: []u8) void {
+    return self.fragFunc(self.data, x, y, buf);
 }
