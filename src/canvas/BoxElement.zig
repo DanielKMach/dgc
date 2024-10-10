@@ -2,17 +2,17 @@ const std = @import("std");
 const Element = @import("element.zig");
 const Self = @This();
 
-x: usize,
-y: usize,
+x: isize,
+y: isize,
 width: usize,
 height: usize,
 
-pub fn init(x: usize, y: usize, width: usize, height: usize) Self {
+pub fn init(x: isize, y: isize, width: usize, height: usize) Self {
     return Self{ .x = x, .y = y, .width = width, .height = height };
 }
 
 pub fn frag(self: Self, x: usize, y: usize) ?u8 {
-    if (x >= self.x and x < self.x + self.width and y >= self.y and y < self.y + self.height) {
+    if (x >= self.x and x < self.x + @as(isize, @intCast(self.width)) and y >= self.y and y < self.y + @as(isize, @intCast(self.height))) {
         return '#';
     }
     return null;
