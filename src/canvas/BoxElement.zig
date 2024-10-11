@@ -6,13 +6,14 @@ pub const Config = struct {
     char: ?u8 = null,
     bgcolor: ?u8 = null,
     fgcolor: ?u8 = null,
+    frame: bool = false,
 };
 
 x: isize,
 y: isize,
 width: usize,
 height: usize,
-config: Config,
+config: Config = .{},
 
 pub fn init(x: isize, y: isize, width: usize, height: usize, config: Config) Self {
     return Self{
@@ -29,6 +30,21 @@ pub fn frag(self: Self, x: usize, y: usize, buf: []u8) void {
         if (self.config.char) |c| buf[0] = c;
         if (self.config.fgcolor) |c| buf[1] = c;
         if (self.config.bgcolor) |c| buf[2] = c;
+        if (self.config.frame) {
+            if (x == self.x and y == self.y) {
+                buf[0] = '+';
+            } else if (x == self.x + @as(isize, @intCast(self.width)) - 1 and y == self.y) {
+                buf[0] = '+';
+            } else if (x == self.x and y == self.y + @as(isize, @intCast(self.height)) - 1) {
+                buf[0] = '+';
+            } else if (x == self.x + @as(isize, @intCast(self.width)) - 1 and y == self.y + @as(isize, @intCast(self.height)) - 1) {
+                buf[0] = '+';
+            } else if (x == self.x or x == self.x + @as(isize, @intCast(self.width)) - 1) {
+                buf[0] = '|';
+            } else if (y == self.y or y == self.y + @as(isize, @intCast(self.height)) - 1) {
+                buf[0] = '-';
+            }
+        }
     }
 }
 
