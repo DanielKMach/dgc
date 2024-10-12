@@ -61,7 +61,11 @@ pub fn render(self: *Self) !void {
             writer.print("\x1b[0m", .{}) catch unreachable;
             if (buf[1] != 0) writer.print("\x1b[38;5;{d}m", .{buf[1]}) catch unreachable;
             if (buf[2] != 0) writer.print("\x1b[48;5;{d}m", .{buf[2]}) catch unreachable;
-            if (buf[0] != 0) writer.print("{c}", .{buf[0]}) catch unreachable;
+            if (buf[0] != 0) {
+                writer.print("{c}", .{buf[0]}) catch unreachable;
+            } else {
+                writer.print(" ", .{}) catch unreachable;
+            }
         }
         writer.print("\r\n", .{}) catch unreachable;
     }
