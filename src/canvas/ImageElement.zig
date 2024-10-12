@@ -1,4 +1,5 @@
 const std = @import("std");
+const Buffer = @import("Canvas.zig").Buffer;
 
 const Self = @This();
 
@@ -36,7 +37,7 @@ pub fn from(x: isize, y: isize, comptime path: []const u8) Self {
     }
 }
 
-pub fn frag(self: Self, x: usize, y: usize, buf: []u8) void {
+pub fn frag(self: Self, x: usize, y: usize, buf: *Buffer) void {
     if (x < self.x or x >= self.x + @as(isize, @intCast(self.width)) or y < self.y or y >= self.y + @as(isize, @intCast(self.height))) return;
     const dx: usize = @intCast(@as(isize, @intCast(x)) - self.x);
     const dy: usize = @intCast(@as(isize, @intCast(y)) - self.y);
@@ -46,65 +47,65 @@ pub fn frag(self: Self, x: usize, y: usize, buf: []u8) void {
 }
 test "bounds" {
     const img = Self.init(1, 1, 1, 1, "#", .{});
-    var buf: [3]u8 = std.mem.zeroes([3]u8);
+    var buf: Buffer = .{null} ** 3;
 
     img.frag(1, 0, &buf);
-    try std.testing.expectEqual(buf[0], 0);
-    buf = std.mem.zeroes([3]u8);
+    try std.testing.expectEqual(buf[0], null);
+    buf = .{null} ** 3;
     img.frag(0, 1, &buf);
-    try std.testing.expectEqual(buf[0], 0);
-    buf = std.mem.zeroes([3]u8);
+    try std.testing.expectEqual(buf[0], null);
+    buf = .{null} ** 3;
     img.frag(1, 2, &buf);
-    try std.testing.expectEqual(buf[0], 0);
-    buf = std.mem.zeroes([3]u8);
+    try std.testing.expectEqual(buf[0], null);
+    buf = .{null} ** 3;
     img.frag(2, 1, &buf);
-    try std.testing.expectEqual(buf[0], 0);
-    buf = std.mem.zeroes([3]u8);
+    try std.testing.expectEqual(buf[0], null);
+    buf = .{null} ** 3;
     img.frag(1, 1, &buf);
     try std.testing.expectEqual(buf[0], '#');
-    buf = std.mem.zeroes([3]u8);
+    buf = .{null} ** 3;
 }
 
 test "projection" {
     const data = "1234";
     const img = Self.init(0, 0, 2, 2, data, .{});
-    var buf: [3]u8 = std.mem.zeroes([3]u8);
+    var buf: Buffer = .{null} ** 3;
 
     img.frag(0, 0, &buf);
     try std.testing.expectEqual(buf[0], '1');
-    buf = std.mem.zeroes([3]u8);
+    buf = .{null} ** 3;
 
     img.frag(1, 0, &buf);
     try std.testing.expectEqual(buf[0], '2');
-    buf = std.mem.zeroes([3]u8);
+    buf = .{null} ** 3;
 
     img.frag(0, 1, &buf);
     try std.testing.expectEqual(buf[0], '3');
-    buf = std.mem.zeroes([3]u8);
+    buf = .{null} ** 3;
 
     img.frag(1, 1, &buf);
     try std.testing.expectEqual(buf[0], '4');
-    buf = std.mem.zeroes([3]u8);
+    buf = .{null} ** 3;
 }
 
 test "colored projection" {
     const data = "1234";
     const img = Self.init(0, 0, 2, 2, data, .{ .fgmap = &.{ 'r', 'g', 'b', 'y' } });
-    var buf: [3]u8 = std.mem.zeroes([3]u8);
+    var buf: Buffer = .{null} ** 3;
 
     img.frag(0, 0, &buf);
     try std.testing.expectEqual(buf[1], 'r');
-    buf = std.mem.zeroes([3]u8);
+    buf = .{null} ** 3;
 
     img.frag(1, 0, &buf);
     try std.testing.expectEqual(buf[1], 'g');
-    buf = std.mem.zeroes([3]u8);
+    buf = .{null} ** 3;
 
     img.frag(0, 1, &buf);
     try std.testing.expectEqual(buf[1], 'b');
-    buf = std.mem.zeroes([3]u8);
+    buf = .{null} ** 3;
 
     img.frag(1, 1, &buf);
     try std.testing.expectEqual(buf[1], 'y');
-    buf = std.mem.zeroes([3]u8);
+    buf = .{null} ** 3;
 }

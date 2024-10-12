@@ -5,6 +5,8 @@ const Self = @This();
 
 const Writer = std.io.BufferedWriter(2048, std.io.AnyWriter);
 
+pub const Buffer = [3]?u8;
+
 allocator: std.mem.Allocator,
 writer: Writer,
 
@@ -54,18 +56,14 @@ pub fn render(self: *Self) !void {
 
     for (0..self.height) |y| {
         for (0..self.width) |x| {
-            var buf: [3]u8 = .{0} ** 3;
+            var buf: Buffer = .{null} ** 3;
             for (self.elements.items) |*element| {
                 element.frag(x, y, &buf);
             }
             writer.print("\x1b[0m", .{}) catch unreachable;
-            if (buf[1] != 0) writer.print("\x1b[38;5;{d}m", .{buf[1]}) catch unreachable;
-            if (buf[2] != 0) writer.print("\x1b[48;5;{d}m", .{buf[2]}) catch unreachable;
-            if (buf[0] != 0) {
-                writer.print("{c}", .{buf[0]}) catch unreachable;
-            } else {
-                writer.print(" ", .{}) catch unreachable;
-            }
+            if (buf[1]) |fg| writer.print("\x1b[38;5;{d}m", .{fg}) catch unreachable;
+            if (buf[2]) |bg| writer.print("\x1b[48;5;{d}m", .{bg}) catch unreachable;
+            writer.print("{c}", .{buf[0] orelse ' '}) catch unreachable;
         }
         writer.print("\r\n", .{}) catch unreachable;
     }

@@ -1,6 +1,8 @@
 const std = @import("std");
+const Buffer = @import("Canvas.zig").Buffer;
+
 const Self = @This();
-const FragFunc = *const fn (*const anyopaque, usize, usize, []u8) void;
+const FragFunc = *const fn (*const anyopaque, usize, usize, *Buffer) void;
 const DeinitFunc = *const fn (*const anyopaque, std.mem.Allocator) void;
 
 allocator: ?std.mem.Allocator,
@@ -30,7 +32,7 @@ pub fn new(base: anytype, allocator: std.mem.Allocator) !Self {
     }
 
     const gen = struct {
-        pub fn frag(pointer: *const anyopaque, x: usize, y: usize, buf: []u8) void {
+        pub fn frag(pointer: *const anyopaque, x: usize, y: usize, buf: *Buffer) void {
             const self: *const DataType = @ptrCast(@alignCast(pointer));
             return DataType.frag(self.*, x, y, buf);
         }
@@ -59,6 +61,6 @@ pub fn deinit(self: *Self) void {
     self.* = undefined;
 }
 
-pub fn frag(self: *Self, x: usize, y: usize, buf: []u8) void {
+pub fn frag(self: *Self, x: usize, y: usize, buf: *Buffer) void {
     return self.fragFunc(self.data, x, y, buf);
 }
