@@ -4,15 +4,15 @@ const canvas = @import("../canvas.zig");
 const Self = @This();
 
 const Cell = struct {
-    const filled = '#';
+    const filled = '@';
     const flag = 'P';
-    const empty = ' ';
+    const empty = '.';
     const bomb = 'X';
 };
 
 const palette = blk: {
     var colors: [256]u8 = undefined;
-    colors[Cell.empty] = 0;
+    colors[Cell.empty] = 234;
     colors[Cell.filled] = 15;
     colors[Cell.flag] = 15;
     colors[Cell.bomb] = 52;
@@ -41,36 +41,34 @@ vline: *canvas.BoxElement,
 hline: *canvas.BoxElement,
 
 pub fn init(allocator: std.mem.Allocator, out: std.io.AnyWriter) !Self {
-    const width = 16;
-    const height = 6;
+    const width = 8;
+    const height = 8;
 
-    var cvs = canvas.Canvas.init(out, width + 2, height + 2, allocator);
+    var cvs = canvas.Canvas.init(out, width * 2 + 3, height + 2, allocator);
     const state = try allocator.dupe(u8, &(.{Cell.filled} ** (width * height)));
     const colors = try allocator.dupe(u8, &(.{palette[Cell.filled]} ** (width * height)));
     const bombs = try allocator.dupe(u8, &(.{Cell.empty} ** (width * height)));
 
-    var xoalgumacoisa = std.rand.Xoshiro256.init(@intCast(std.time.timestamp()));
-    const random = xoalgumacoisa.random();
-
-    for (0..width) |x| {
-        for (0..height) |y| {
-            if (random.intRangeAtMost(u8, 0, 100) < 10) {
-                bombs[y * width + x] = 'X';
-            }
-        }
-    }
-
     const vline = try allocator.create(canvas.BoxElement);
     const hline = try allocator.create(canvas.BoxElement);
-    vline.* = canvas.BoxElement.init(1, 1, 1, height, .{ .bgcolor = 238 });
-    hline.* = canvas.BoxElement.init(1, 1, width, 1, .{ .bgcolor = 238 });
+    vline.* = canvas.BoxElement.init(2, 0, 1, height + 2, .{ .bgcolor = 234 });
+    hline.* = canvas.BoxElement.init(0, 1, width * 2 + 3, 1, .{ .bgcolor = 234 });
 
     try cvs.addElement(vline);
     try cvs.addElement(hline);
-    try cvs.addElement(canvas.BoxElement.init(0, 0, width + 2, height + 2, .{ .frame = true }));
-    try cvs.addElement(canvas.ImageElement.init(1, 1, width, height, state, .{ .fgmap = colors }));
+    try cvs.addElement(canvas.FrameElement.init(0, 0, width * 2 + 3, height + 2, .{}));
+    for (0..width) |x| {
+        try cvs.addElement(canvas.ImageElement.init(
+            @intCast(x * 2 + 2),
+            1,
+            1,
+            height,
+            state[x * height .. (x + 1) * height],
+            .{ .fgmap = colors[x * height .. (x + 1) * height] },
+        ));
+    }
 
-    return Self{
+    var game = Self{
         .allocator = allocator,
         .canvas = cvs,
         .width = width,
@@ -81,6 +79,9 @@ pub fn init(allocator: std.mem.Allocator, out: std.io.AnyWriter) !Self {
         .vline = vline,
         .hline = hline,
     };
+
+    game.reset();
+    return game;
 }
 
 pub fn update(self: *Self, key: u8) !void {
@@ -89,8 +90,8 @@ pub fn update(self: *Self, key: u8) !void {
         'k' => self.moveCursor(0, -1),
         'l' => self.moveCursor(1, 0),
         'h' => self.moveCursor(-1, 0),
-        'p' => {
-            const i = self.y * self.width + self.x;
+        'f' => {
+            const i = self.x * self.height + self.y;
             switch (self.state[i]) {
                 Cell.flag => self.state[i] = Cell.filled,
                 Cell.filled => self.state[i] = Cell.flag,
@@ -98,8 +99,29 @@ pub fn update(self: *Self, key: u8) !void {
             }
         },
         ' ' => self.open(self.x, self.y),
+        'r' => self.reset(),
         else => {},
     }
+}
+
+pub fn reset(self: *Self) void {
+    var xoalgumacoisa = std.rand.Xoshiro256.init(@intCast(std.time.timestamp()));
+    const random = xoalgumacoisa.random();
+    const bombCount = 10;
+
+    for (0..self.state.len) |i| {
+        self.state[i] = Cell.filled;
+        self.colors[i] = palette[Cell.filled];
+        self.bombs[i] = Cell.empty;
+    }
+    for (0..bombCount) |_| while (true) {
+        const rx = random.intRangeLessThan(usize, 0, self.width);
+        const ry = random.intRangeLessThan(usize, 0, self.height);
+        if (self.bombs[rx * self.height + ry] != Cell.bomb) {
+            self.bombs[rx * self.height + ry] = Cell.bomb;
+            break;
+        }
+    };
 }
 
 pub fn moveCursor(self: *Self, dx: isize, dy: isize) void {
@@ -110,7 +132,7 @@ pub fn moveCursor(self: *Self, dx: isize, dy: isize) void {
     if (dy == 0 and self.x == self.width - 1 and dx == 1) return;
     self.x = @as(usize, @intCast(@as(isize, @intCast(self.x)) + dx));
     self.y = @as(usize, @intCast(@as(isize, @intCast(self.y)) + dy));
-    self.vline.x = @intCast(self.x + 1);
+    self.vline.x = @intCast(self.x * 2 + 2);
     self.hline.y = @intCast(self.y + 1);
 }
 
@@ -118,7 +140,7 @@ pub fn open(self: *Self, x: usize, y: usize) void {
     if (x < 0 or x >= self.width or y < 0 or y >= self.height)
         return;
 
-    const i = y * self.width + x;
+    const i = x * self.height + y;
     if (self.state[i] != Cell.filled) return;
 
     if (self.bombs[i] == Cell.bomb) {
@@ -138,7 +160,7 @@ pub fn open(self: *Self, x: usize, y: usize) void {
             const yy = y + dy - 1;
             const xx = x + dx - 1;
             if (yy < 0 or yy >= self.height or xx < 0 or xx >= self.width) continue;
-            if (self.bombs[yy * self.width + xx] == Cell.bomb) {
+            if (self.bombs[xx * self.height + yy] == Cell.bomb) {
                 self.state[i] += 1;
             }
         }
